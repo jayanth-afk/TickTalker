@@ -188,11 +188,11 @@ body {
 .news-headline {
   font-family: var(--font-head); font-size: 14px; font-weight: 600;
   color: var(--text); line-height: 1.4; margin-bottom: 10px;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden;
 }
 .news-summary {
   font-size: 12px; color: var(--text-dim); line-height: 1.5;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-clamp: 2; overflow: hidden;
   margin-bottom: 12px;
 }
 .news-footer { display: flex; align-items: center; justify-content: space-between; }
