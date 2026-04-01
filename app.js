@@ -1,7 +1,5 @@
-/* =============================================
-   TICKTALKER — app.js (FREE TIER GLD VERSION)
-   ============================================= */
-
+/* TICKTALKER — app.js */
+  
 const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
 const BASE    = 'https://finnhub.io/api/v1';
 
@@ -9,7 +7,7 @@ let chartData    = [];
 let refreshTimer = null;
 let prevPrice    = null; 
 
-// ── ENTRY POINT ──────────────────────────────
+//ENTRY POINT
 async function init() {
   hideError();
   startClock();
@@ -24,7 +22,7 @@ async function init() {
   scheduleRefresh();
 }
 
-// ── LIVE CLOCK ───────────────────────────────
+//  LIVE CLOCK 
 function startClock() {
   const el = document.getElementById('live-clock');
   const tick = () => {
@@ -34,7 +32,7 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-// ── MARKET BADGE ─────────────────────────────
+// MARKET BADGE
 function updateMarketBadge() {
   const now  = new Date();
   const day  = now.getUTCDay();
@@ -49,9 +47,9 @@ function updateMarketBadge() {
   label.textContent = isOpen ? 'Market Open' : 'Market Closed';
 }
 
-// ── GOLD PRICE (FIXED FOR FREE TIER) ──────────
+//GOLD PRICE
 async function fetchGoldPrice() {
-  // CHANGED: Using symbol=GLD because XAU_USD is restricted
+
   const url = `${BASE}/quote?symbol=GLD&token=${API_KEY}`;
 
   try {
@@ -128,7 +126,7 @@ function useDemoGoldPrice() {
   setCard('stat-prev', 'Prev. Close', fmt(242.80));
 }
 
-// ── GOLD CANDLES (FIXED FOR FREE TIER) ────────
+//GOLD CANDLES
 async function fetchGoldCandles() {
   const to   = Math.floor(Date.now() / 1000);
   const from = to - 30 * 24 * 60 * 60;
@@ -193,8 +191,7 @@ function useDemoChart() {
   drawChart(chartData);
 }
 
-// ... Keep your drawChart, fetchMarketNews, and Helpers exactly as they were ...
-
+// Keep your drawChart, fetchMarketNews, and Helpers exactly as they were
 function drawChart(data) {
   const loader = document.getElementById('chart-loader');
   if (loader) loader.style.display = 'none';
