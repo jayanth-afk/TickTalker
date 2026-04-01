@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TickTalker — Gold Market Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- AMBIENT BACKGROUND ORBS -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- HEADER -->
+  <header class="header glass">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">Tick<em>Talker</em></span>
+      </div>
+      <div class="header-center">
+        <span class="pill" id="market-badge">
+          <span class="badge-dot"></span>
+          <span id="market-label">Checking…</span>
+        </span>
+      </div>
+      <div class="header-right">
+        <span class="clock" id="live-clock">--:--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- HERO PRICE -->
+    <section class="hero">
+      <div class="hero-eyebrow">GOLD SPOT &nbsp;·&nbsp; XAU / USD</div>
+      <div class="hero-row">
+        <h1 class="hero-price" id="gold-price">
+          <span class="skeleton sk-price"></span>
+        </h1>
+        <div class="hero-change" id="gold-change">
+          <span class="skeleton sk-change"></span>
+        </div>
+      </div>
+      <div class="hero-sub" id="hero-sub">
+        <span class="skeleton sk-sub"></span>
+      </div>
+    </section>
+
+    <!-- STAT CARDS -->
+    <section class="stat-grid">
+      <div class="glass card" id="stat-open">
+        <div class="card-label">Open</div>
+        <div class="card-value"><span class="skeleton sk-val"></span></div>
+      </div>
+      <div class="glass card" id="stat-high">
+        <div class="card-label">Day High</div>
+        <div class="card-value"><span class="skeleton sk-val"></span></div>
+      </div>
+      <div class="glass card" id="stat-low">
+        <div class="card-label">Day Low</div>
+        <div class="card-value"><span class="skeleton sk-val"></span></div>
+      </div>
+      <div class="glass card" id="stat-prev">
+        <div class="card-label">Prev. Close</div>
+        <div class="card-value"><span class="skeleton sk-val"></span></div>
+      </div>
+    </section>
+
+    <!-- TREND CHART -->
+    <section class="glass card chart-card">
+      <div class="card-header">
+        <h2 class="card-title">30-Day Price Trend</h2>
+        <span class="card-meta" id="chart-meta"></span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="trend-chart"></canvas>
+        <div class="chart-loader" id="chart-loader">
+          <div class="spinner"></div>
+          <span>Fetching historical data…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKET NEWS -->
+    <section class="news-section">
+      <div class="section-head">
+        <h2 class="card-title">Market News</h2>
+        <span class="card-meta" id="news-meta"></span>
+      </div>
+      <div class="news-grid" id="news-grid">
+        <!-- skeletons -->
+        <div class="glass card news-card"><span class="skeleton sk-news"></span></div>
+        <div class="glass card news-card"><span class="skeleton sk-news"></span></div>
+        <div class="glass card news-card"><span class="skeleton sk-news"></span></div>
+        <div class="glass card news-card"><span class="skeleton sk-news"></span></div>
+      </div>
+    </section>
+
+    <!-- ERROR -->
+    <div class="error-box glass" id="error-box" style="display:none">
+      <span class="error-icon">⚠</span>
+      <p id="error-msg">Unable to fetch data.</p>
+      <button onclick="init()">Retry</button>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    Data by <a href="https://finnhub.io" target="_blank">Finnhub</a>
+    &nbsp;·&nbsp; Auto-refreshes every 60s &nbsp;·&nbsp; Free tier: 60 req/min
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
