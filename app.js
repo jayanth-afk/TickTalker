@@ -12,7 +12,7 @@
    Auto-refreshes price every 60 seconds
    ============================================= */
 
-const API_KEY = 'YOUR_FINNHUB_API_KEY'; // ← paste your Finnhub key here
+const API_KEY = 'd76jel9r01qtg3ndr80gd76jel9r01qtg3ndr810'; // ← paste your Finnhub key here
 const BASE    = 'https://finnhub.io/api/v1';
 
 let chartData    = [];
