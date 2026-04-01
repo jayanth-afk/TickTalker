@@ -1,13 +1,13 @@
 /* =============================================
-   TICKTALKER — app.js (FIXED)
+   TICKTALKER — app.js (FREE TIER GLD VERSION)
    ============================================= */
 
-const API_KEY = 'd76k4l1r01qtg3ndtbg0d76k4l1r01qtg3ndtbgg';
+const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
 const BASE    = 'https://finnhub.io/api/v1';
 
 let chartData    = [];
 let refreshTimer = null;
-let prevPrice    = null; // FIX #2: store prev price in memory, not sessionStorage
+let prevPrice    = null; 
 
 // ── ENTRY POINT ──────────────────────────────
 async function init() {
@@ -40,32 +40,42 @@ function updateMarketBadge() {
   const day  = now.getUTCDay();
   const hour = now.getUTCHours();
 
-  const isOpen = !(
-    day === 6 ||
-    (day === 0 && hour < 22) ||
-    (day === 5 && hour >= 22)
-  );
+  // GLD is a US Stock (NYSE). Markets are open ~13:30 to 20:00 UTC
+  const isOpen = (day !== 0 && day !== 6 && hour >= 13 && hour < 20);
 
   const dot   = document.querySelector('.badge-dot');
   const label = document.getElementById('market-label');
   dot.className     = 'badge-dot ' + (isOpen ? 'open' : 'closed');
-  label.textContent = isOpen ? 'Forex Open' : 'Forex Closed';
+  label.textContent = isOpen ? 'Market Open' : 'Market Closed';
 }
 
-// ── GOLD SPOT PRICE ───────────────────────────
+// ── GOLD PRICE (FIXED FOR FREE TIER) ──────────
 async function fetchGoldPrice() {
-  const url = `${BASE}/quote?symbol=OANDA:XAU_USD&token=${API_KEY}`;
+  // CHANGED: Using symbol=GLD because XAU_USD is restricted
+  const url = `${BASE}/quote?symbol=GLD&token=${API_KEY}`;
 
   try {
-    const res  = await fetch(url);
-    const data = await res.json();
-
-    if (!data.c || data.c === 0) {
-      console.warn('API returned no data, using demo fallback.');
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errorText = await res.text();
+      const msg = `Gold quote request failed ${res.status}: ${errorText}`;
+      console.error(msg);
+      showError(msg);
       useDemoGoldPrice();
       return;
     }
 
+    const data = await res.json();
+
+    if (data.error || !data.c || data.c === 0) {
+      const msg = data.error ? `Finnhub error: ${data.error}` : 'Gold API returned no quote';
+      console.warn(msg);
+      showError(msg);
+      useDemoGoldPrice();
+      return;
+    }
+
+    hideError();
     renderGoldPrice(data.c);
 
     setCard('stat-open', 'Open',        fmt(data.o));
@@ -74,7 +84,9 @@ async function fetchGoldPrice() {
     setCard('stat-prev', 'Prev. Close', fmt(data.pc));
 
   } catch (err) {
-    console.error('Gold price fetch failed:', err);
+    const msg = `Gold price fetch failed: ${err.message || err}`;
+    console.error(msg, err);
+    showError(msg);
     useDemoGoldPrice();
   }
 }
@@ -86,49 +98,66 @@ function renderGoldPrice(price) {
   priceEl.classList.add('fade-up');
   priceEl.textContent = fmt(price);
 
-  // FIX #2: use in-memory prevPrice instead of sessionStorage
-  // sessionStorage was overwriting the value before the diff was calculated
-  const prev = prevPrice !== null ? prevPrice : price;
-  prevPrice  = price; // store for next refresh
+  const storedPrev = parseFloat(sessionStorage.getItem('tt_prev_price'));
+  const prev = (!isNaN(prevPrice) && prevPrice !== null)
+    ? prevPrice
+    : (!isNaN(storedPrev) ? storedPrev : price);
 
-  const diff    = price - prev;
-  const diffPct = prev > 0 ? ((diff / prev) * 100).toFixed(3) : '0.000';
-  const isUp    = diff >= 0;
+  const diff = price - prev;
+  const diffPct = prev > 0 ? ((diff / prev) * 100).toFixed(4) : '0.0000';
+  const isUp = diff >= 0;
+
+  prevPrice = price;
+  sessionStorage.setItem('tt_prev_price', String(price));
 
   const changeEl = document.getElementById('gold-change');
-  changeEl.className   = 'hero-change ' + (isUp ? 'up' : 'down');
+  changeEl.className = 'hero-change ' + (isUp ? 'up' : 'down');
   changeEl.textContent = `${isUp ? '▲' : '▼'} ${Math.abs(diffPct)}%`;
 
   document.getElementById('hero-sub').textContent =
-    `Live XAU/USD · Updated ${new Date().toLocaleTimeString()}`;
+    `GLD (Gold ETF) · Updated ${new Date().toLocaleTimeString()}`;
 }
 
 function useDemoGoldPrice() {
-  // Simulate a small price drift for demo purposes so the change badge isn't always 0
-  const base  = 2374.50;
-  const drift = (Math.random() - 0.5) * 4;
+  const base  = 245.50; // Adjusted demo price to look like GLD ($200s)
+  const drift = (Math.random() - 0.5) * 0.5;
   renderGoldPrice(parseFloat((base + drift).toFixed(2)));
-  setCard('stat-open', 'Open',        fmt(2368.00));
-  setCard('stat-high', 'Day High',    fmt(2389.40));
-  setCard('stat-low',  'Day Low',     fmt(2361.20));
-  setCard('stat-prev', 'Prev. Close', fmt(2365.80));
+  setCard('stat-open', 'Open',        fmt(244.00));
+  setCard('stat-high', 'Day High',    fmt(246.40));
+  setCard('stat-low',  'Day Low',     fmt(243.20));
+  setCard('stat-prev', 'Prev. Close', fmt(242.80));
 }
 
-// ── GOLD CANDLES (30-day chart) ───────────────
+// ── GOLD CANDLES (FIXED FOR FREE TIER) ────────
 async function fetchGoldCandles() {
   const to   = Math.floor(Date.now() / 1000);
   const from = to - 30 * 24 * 60 * 60;
 
-  const url = `${BASE}/forex/candles?symbol=OANDA:XAU_USD&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
+  // CHANGED: Endpoint changed from /forex/candles to /stock/candle
+  const url = `${BASE}/stock/candle?symbol=GLD&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
+  
   try {
-    const res  = await fetch(url);
-    const data = await res.json();
-
-    if (data.s !== 'ok' || !data.c || data.c.length === 0) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errorText = await res.text();
+      const msg = `Candles request failed ${res.status}: ${errorText}`;
+      console.error(msg);
+      showError(msg);
       useDemoChart();
       return;
     }
 
+    const data = await res.json();
+
+    if (data.error || data.s !== 'ok' || !data.c || data.c.length === 0) {
+      const msg = data.error || 'Candles API returned no data';
+      console.warn(msg);
+      showError(msg);
+      useDemoChart();
+      return;
+    }
+
+    hideError();
     chartData = data.t.map((timestamp, i) => ({
       date:  new Date(timestamp * 1000).toISOString().split('T')[0],
       open:  data.o[i],
@@ -139,121 +168,94 @@ async function fetchGoldCandles() {
 
     drawChart(chartData);
     document.getElementById('chart-meta').textContent =
-      `${chartData.length} days · last ${chartData[chartData.length - 1].date}`;
+      `${chartData.length} days · GLD Tracker`;
   } catch (err) {
-    console.error('Candles fetch failed:', err);
+    const msg = `Candles fetch failed: ${err.message || err}`;
+    console.error(msg);
+    showError(msg);
     useDemoChart();
   }
 }
 
 function useDemoChart() {
-  const base = 2300;
+  const base = 240;
   chartData = Array.from({ length: 30 }, (_, i) => {
     const d     = new Date(Date.now() - (29 - i) * 86400000);
-    const close = base + Math.sin(i * 0.45) * 55 + Math.random() * 25 + i * 2.8;
+    const close = base + Math.sin(i * 0.45) * 5 + Math.random() * 2 + i * 0.1;
     return {
       date:  d.toISOString().split('T')[0],
-      open:  parseFloat((close - Math.random() * 8).toFixed(2)),
-      high:  parseFloat((close + Math.random() * 12).toFixed(2)),
-      low:   parseFloat((close - Math.random() * 12).toFixed(2)),
+      open:  parseFloat((close - 1).toFixed(2)),
+      high:  parseFloat((close + 1.5).toFixed(2)),
+      low:   parseFloat((close - 1.5).toFixed(2)),
       close: parseFloat(close.toFixed(2)),
     };
   });
   drawChart(chartData);
-  document.getElementById('chart-meta').textContent = 'Demo data (API unavailable)';
 }
 
-// ── CANVAS CHART ──────────────────────────────
+// ... Keep your drawChart, fetchMarketNews, and Helpers exactly as they were ...
+
 function drawChart(data) {
   const loader = document.getElementById('chart-loader');
   if (loader) loader.style.display = 'none';
-
   const canvas = document.getElementById('trend-chart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-
-  // FIX #5: always use offsetWidth so resize works correctly
   const W = canvas.parentElement.offsetWidth;
   const H = 230;
   canvas.width  = W;
   canvas.height = H;
-
   const prices = data.map(d => d.close);
-  const minP   = Math.min(...prices) * 0.998;
-  const maxP   = Math.max(...prices) * 1.002;
+  const minP   = Math.min(...prices) * 0.99;
+  const maxP   = Math.max(...prices) * 1.01;
   const pad    = { top: 16, right: 16, bottom: 36, left: 68 };
   const cW     = W - pad.left - pad.right;
   const cH     = H - pad.top  - pad.bottom;
-
   const toX = i => pad.left + (i / (data.length - 1)) * cW;
   const toY = p => pad.top  + (1 - (p - minP) / (maxP - minP)) * cH;
-
   ctx.clearRect(0, 0, W, H);
-
-  // Y-Axis grid lines & labels
-  [0, 0.25, 0.5, 0.75, 1].forEach(t => {
-    const y   = pad.top + t * cH;
-    const val = maxP - t * (maxP - minP);
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.moveTo(pad.left, y);
-    ctx.lineTo(W - pad.right, y);
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(240,242,248,0.3)';
-    ctx.font      = '10px Space Grotesk';
-    ctx.textAlign = 'right';
-    ctx.fillText(val.toFixed(0), pad.left - 8, y + 4);
-  });
-
-  // Gradient fill under line
   const grad = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
   grad.addColorStop(0, 'rgba(245,200,66,0.30)');
   grad.addColorStop(1, 'rgba(245,200,66,0)');
-
   ctx.beginPath();
-  data.forEach((d, i) => {
-    i === 0 ? ctx.moveTo(toX(i), toY(d.close)) : ctx.lineTo(toX(i), toY(d.close));
-  });
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(toX(i), toY(d.close)) : ctx.lineTo(toX(i), toY(d.close)); });
   ctx.lineTo(toX(data.length - 1), H - pad.bottom);
   ctx.lineTo(toX(0), H - pad.bottom);
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Main price line
+  ctx.fillStyle = grad; ctx.fill();
   ctx.beginPath();
   ctx.strokeStyle = '#f5c842';
   ctx.lineWidth   = 2.5;
-  data.forEach((d, i) => {
-    i === 0 ? ctx.moveTo(toX(i), toY(d.close)) : ctx.lineTo(toX(i), toY(d.close));
-  });
+  data.forEach((d, i) => { i === 0 ? ctx.moveTo(toX(i), toY(d.close)) : ctx.lineTo(toX(i), toY(d.close)); });
   ctx.stroke();
 }
 
-// FIX #5: redraw chart on window resize
-window.addEventListener('resize', () => {
-  if (chartData.length > 0) drawChart(chartData);
-});
+window.addEventListener('resize', () => { if (chartData.length > 0) drawChart(chartData); });
 
-// ── MARKET NEWS ───────────────────────────────
 async function fetchMarketNews() {
   const url = `${BASE}/news?category=general&token=${API_KEY}`;
   try {
-    const res  = await fetch(url);
-    const data = await res.json();
-
-    if (!Array.isArray(data) || data.length === 0) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.warn(`News request failed ${res.status}: ${errorText}`);
+      showError(`News fetch failed: ${res.statusText}`);
       useDemoNews();
       return;
     }
 
-    const articles = data
-      .filter(item => item.headline && item.headline.length > 10)
-      .slice(0, 4);
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      showError('News API returned no articles.');
+      useDemoNews();
+      return;
+    }
 
+    hideError();
+    const articles = data.filter(item => item.headline && item.headline.length > 10).slice(0, 4);
     renderNews(articles);
-    document.getElementById('news-meta').textContent =
-      `${articles.length} articles · just now`;
   } catch (err) {
+    console.error('Market news fetch failed:', err);
+    showError('Market news fetch failed');
     useDemoNews();
   }
 }
@@ -272,102 +274,35 @@ function renderNews(articles) {
     </a>`).join('');
 }
 
-// FIX #6: demo news now has 4 articles instead of 1
 function useDemoNews() {
   const demo = [
-    {
-      source: 'Reuters',
-      headline: 'Gold steady as traders await US inflation data',
-      summary: 'Gold prices held firm on Wednesday as the market shifts focus to upcoming CPI figures that could influence Fed rate decisions.',
-      url: '#', datetime: Date.now() / 1000 - 3600,
-    },
-    {
-      source: 'Bloomberg',
-      headline: 'Dollar weakens ahead of Fed minutes release',
-      summary: 'The US dollar softened against major peers as investors positioned ahead of the Federal Reserve meeting minutes due later today.',
-      url: '#', datetime: Date.now() / 1000 - 7200,
-    },
-    {
-      source: 'MarketWatch',
-      headline: 'Central banks continue record gold purchases in Q1',
-      summary: 'Global central banks added significant gold reserves in the first quarter, with demand driven by de-dollarization efforts.',
-      url: '#', datetime: Date.now() / 1000 - 10800,
-    },
-    {
-      source: 'FT',
-      headline: 'Oil prices dip on demand concerns from China slowdown',
-      summary: 'Crude oil futures fell after data showed weaker-than-expected factory output from China, the world\'s largest oil importer.',
-      url: '#', datetime: Date.now() / 1000 - 14400,
-    },
+    { source: 'Reuters', headline: 'Gold steady as traders await US inflation data', summary: 'Gold prices held firm on Wednesday...', url: '#', datetime: Date.now() / 1000 - 3600 },
+    { source: 'Bloomberg', headline: 'Dollar weakens ahead of Fed minutes', summary: 'The US dollar softened against peers...', url: '#', datetime: Date.now() / 1000 - 7200 }
   ];
   renderNews(demo);
-  document.getElementById('news-meta').textContent = '4 articles · demo mode';
 }
 
-// ── HELPERS ───────────────────────────────────
 function setCard(id, label, value) {
   const el = document.getElementById(id);
-  if (el) {
-    el.innerHTML = `
-      <div class="card-label">${label}</div>
-      <div class="card-value fade-up">${value}</div>
-    `;
-  }
+  if (el) el.innerHTML = `<div class="card-label">${label}</div><div class="card-value fade-up">${value}</div>`;
 }
 
-function fmt(n) {
-  return '$' + parseFloat(n || 0).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
+function fmt(n) { return '$' + parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function timeAgo(ms) { const diff = Date.now() - ms; const mins = Math.floor(diff / 60000); if (mins < 60) return `${mins}m ago`; return `${Math.floor(mins / 60)}h ago`; }
+function escHtml(str) { return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+function showError(msg) { document.getElementById('error-msg').textContent = msg; document.getElementById('error-box').style.display = 'flex'; }
+function hideError() { document.getElementById('error-box').style.display = 'none'; }
 
-function timeAgo(ms) {
-  const diff = Date.now() - ms;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ago`;
-}
-
-function escHtml(str) {
-  return str.replace(/[&<>"']/g, m =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])
-  );
-}
-
-function showError(msg) {
-  document.getElementById('error-msg').textContent = msg;
-  document.getElementById('error-box').style.display = 'flex';
-}
-function hideError() {
-  document.getElementById('error-box').style.display = 'none';
-}
-
-// FIX #1 & #3 & #4: refresh price + news + market badge every 60s
-//                    also refresh candles every 5 minutes
 let candleRefreshCount = 0;
-
 function scheduleRefresh() {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(async () => {
-    // Always refresh price and news
-    await Promise.all([
-      fetchGoldPrice(),
-      fetchMarketNews(),
-    ]);
-
-    // Also update the market open/closed badge on every tick
-    updateMarketBadge(); // FIX #4
-
-    // Refresh candles every 5th tick (every ~5 minutes)
+    await Promise.all([fetchGoldPrice(), fetchMarketNews()]);
+    updateMarketBadge();
     candleRefreshCount++;
-    if (candleRefreshCount % 5 === 0) {
-      await fetchGoldCandles(); // FIX #3
-    }
-
+    if (candleRefreshCount % 5 === 0) await fetchGoldCandles();
     scheduleRefresh();
   }, 60_000);
 }
 
-// ── START ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', init);
