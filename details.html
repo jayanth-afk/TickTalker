@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <!-- <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script> -->
 </head>
 <body>
 
@@ -49,9 +49,9 @@
       <p id="detail-time" style="color: #aaa; font-family: monospace; margin-top: 10px;">Waiting for live data...</p>
     </div>
 
-    <div class="glass card" style="margin-top: 24px; padding: 0; overflow: hidden; height: 500px; border-radius: 16px;">
-        <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
-    </div>
+   <div class="glass card" style="margin-top: 24px; padding: 0; overflow: hidden; height: 500px; border-radius: 16px;">
+    <iframe id="tradingview_widget" style="height: 100%; width: 100%; border: none;" src=""></iframe>
+</div>
 
   </main>
 <script src="details.js"></script>

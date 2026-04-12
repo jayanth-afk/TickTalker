@@ -327,3 +327,6 @@ body.light #theme-toggle  {
   color: #0d1117;
 }
 body.light .logo-tick { color: #0d1117 !important; }
+body.light .market-price { color: #0d1117 !important; }
+body.light .market-time  { color: #555 !important; }
+body.light .market-symbol { color: #8a6a00 !important; }

@@ -156,42 +156,57 @@ function getWeekendFallback(symbol) {
 // === FINAL BULLETPROOF CHART FIX ===
 // === FIX: FORCING CLEAN SYMBOLS FOR FOREX ===
 function loadTradingViewChart() {
+    const symbolMap = {
+        'OANDA:XAUUSD': 'TVC:GOLD',
+        'OANDA:XAGUSD': 'TVC:SILVER',
+        'OANDA:XAUEUR': 'TVC:GOLDEUR',
+        'OANDA:XAUAUD': 'TVC:GOLDAUD',
+        'OANDA:XAUJPY': 'TVC:GOLDJPY',
+        'OANDA:EURUSD': 'FX:EURUSD',
+        'OANDA:GBPUSD': 'FX:GBPUSD',
+        'OANDA:USDJPY': 'FX:USDJPY',
+        'OANDA:USDCHF': 'FX:USDCHF',
+        'OANDA:AUDUSD': 'FX:AUDUSD',
+        'OANDA:USDCAD': 'FX:USDCAD',
+        'OANDA:NZDUSD': 'FX:NZDUSD',
+        'OANDA:EURGBP': 'FX:EURGBP',
+        'OANDA:EURJPY': 'FX:EURJPY',
+        'OANDA:GBPJPY': 'FX:GBPJPY',
+        'OANDA:AUDJPY': 'FX:AUDJPY',
+        'OANDA:EURAUD': 'FX:EURAUD',
+        'OANDA:GBPAUD': 'FX:GBPAUD',
+        'OANDA:USDINR': 'FX:USDINR',
+        'OANDA:EURINR': 'FX:EURINR',
+        'BINANCE:BTCUSDT': 'BINANCE:BTCUSDT',
+        'BINANCE:ETHUSDT': 'BINANCE:ETHUSDT',
+        'BINANCE:SOLUSDT': 'BINANCE:SOLUSDT',
+        'BINANCE:BNBUSDT': 'BINANCE:BNBUSDT',
+        'BINANCE:BCHUSDT': 'BINANCE:BCHUSDT',
+        'BINANCE:AAVEUSDT': 'BINANCE:AAVEUSDT',
+        'BINANCE:MKRUSDT': 'BINANCE:MKRUSDT',
+        'BINANCE:AVAXUSDT': 'BINANCE:AVAXUSDT',
+        'BINANCE:LINKUSDT': 'BINANCE:LINKUSDT',
+        'BINANCE:INJUSDT': 'BINANCE:INJUSDT',
+        'BINANCE:DOTUSDT': 'BINANCE:DOTUSDT',
+        'BINANCE:LTCUSDT': 'BINANCE:LTCUSDT',
+        'BINANCE:APTUSDT': 'BINANCE:APTUSDT',
+        'BINANCE:UNIUSDT': 'BINANCE:UNIUSDT',
+        'BINANCE:ATOMUSDT': 'BINANCE:ATOMUSDT',
+    };
 
-    // currentSymbol is already clean (no underscores) — just fix the prefix
-    let tvSymbol = currentSymbol;
+    const tvSymbol = symbolMap[currentSymbol] || currentSymbol;
+    const theme = document.body.classList.contains('light') ? 'light' : 'dark';
+    const bgColor = theme === 'light' ? 'ffffff' : '070b14';
 
-    if (currentSymbol.includes('OANDA:')) {
-        const pair = currentSymbol.split(':')[1]; // e.g. "XAUUSD", "EURUSD"
-        if (pair.includes('XAU') || pair.includes('XAG')) {
-            tvSymbol = 'OANDA:' + pair;  // Metals stay on OANDA
-        } else {
-            tvSymbol = 'FX:' + pair;     // All forex: EURUSD, GBPUSD, NZDUSD etc.
-        }
-    }
-    // Crypto (BINANCE:BTCUSDT) — no change needed
+    console.log("TradingView iframe symbol:", tvSymbol);
 
-    console.log("TradingView loading symbol:", tvSymbol);
+    const url = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(tvSymbol)}&interval=15&theme=${theme}&style=1&locale=en&backgroundColor=%23${bgColor}&hide_side_toolbar=0&allow_symbol_change=1&save_image=0`;
 
-    try {
-        new TradingView.widget({
-            "autosize": true,
-            "symbol": tvSymbol,
-            "interval": "15",
-            "timezone": "Etc/UTC",
-            "theme": "dark",
-            "style": "1",
-            "locale": "en",
-            "toolbar_bg": "#f1f3f6",
-            "enable_publishing": false,
-            "hide_side_toolbar": false,
-            "allow_symbol_change": true,
-            "container_id": "tradingview_widget",
-            "backgroundColor": "rgba(7, 11, 20, 1)",
-            "gridColor": "rgba(255, 255, 255, 0.05)"
-        });
-    } catch (e) {
-        console.error("TV Widget Error:", e);
-    }
+    document.getElementById('tradingview_widget').src = url;
+}
+
+function waitForTradingView() {
+    loadTradingViewChart();
 }
 // === LIGHT / DARK MODE TOGGLE ===
 function toggleTheme() {
@@ -213,15 +228,6 @@ function toggleTheme() {
     }
   }
 })();
-// Run the setup
-// Wait for tv.js to finish loading before injecting the widget
-function waitForTradingView() {
-    if (typeof TradingView !== 'undefined') {
-        loadTradingViewChart();
-    } else {
-        setTimeout(waitForTradingView, 100);
-    }
-}
 document.addEventListener('DOMContentLoaded', () => {
     setupUI();
     fetchInitialPrice();
