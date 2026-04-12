@@ -133,6 +133,13 @@ function buildMarketGrid() {
             <div class="market-price" id="price-${symbol}">---</div>
             <div class="market-time" id="time-${symbol}">Awaiting data...</div>
         `;
+        // Make it look clickable
+        card.style.cursor = 'pointer';
+        
+        // When clicked, redirect to the new page and pass the symbol in the URL!
+        card.addEventListener('click', () => {
+            window.location.href = `details.html?symbol=${symbol}`;
+        });
         grid.appendChild(card);
     });
 }
@@ -237,9 +244,25 @@ function getWeekendFallback(symbol) {
 // === SEARCH & SORT ===
 function filterMarkets(e) {
     const query = e.target.value.toLowerCase();
-    document.querySelectorAll('.market-card').forEach(card => {
-        card.style.display = card.dataset.symbol.includes(query) ? 'flex' : 'none';
+    const cards = document.querySelectorAll('.market-card');
+    const noResults = document.getElementById('no-results');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        if (card.dataset.symbol.includes(query)) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
     });
+
+    // If no cards match the search, show the "No Results" message
+    if (visibleCount === 0) {
+        noResults.style.display = 'block';
+    } else {
+        noResults.style.display = 'none';
+    }
 }
 
 function sortMarkets(e) {

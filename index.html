@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TickTalker — Multi-Market Dashboard</title>
+  <link rel="icon" type="image/png" href="images/title.png?v=1" />
+  <link rel="shortcut icon" type="image/png" href="images/title.png?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -14,17 +16,26 @@
   <div class="bg-orb orb-2"></div>
   <div class="bg-orb orb-3"></div>
 
-  <header class="header glass">
-    <div class="header-center" style="display: flex; gap: 10px; justify-content: center;">
+<header class="header glass" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 15px 30px;">
+    
+    <div class="logo" style="display: flex; align-items: center; gap: 10px; justify-self: start;">
+      <img src="images/title.png" alt="TickTalker Logo" style="height: 40px; width: auto;" />
+      <span class="logo-text" style="font-size: 24px; font-weight: bold; color: #f0f2f8;">Tick<em style="color: #c9a230; font-style: normal;">Talker</em></span>
+    </div>
+
+    <div class="header-center" style="display: flex; gap: 10px; justify-self: center;">
       <span class="pill" id="market-badge">
         <span class="badge-dot" id="market-dot"></span>
         <span id="market-label">Forex/Stocks: Checking...</span>
       </span>
-        <span class="pill" id="crypto-badge">
-          <span class="badge-dot open"></span>
-          <span>Crypto: Live</span>
-        </span>
-      </div>
+      <span class="pill" id="crypto-badge">
+        <span class="badge-dot open"></span>
+        <span>Crypto: Live</span>
+      </span>
+    </div>
+
+    <div></div>
+    
   </header>
 
   <main class="main">
@@ -45,6 +56,11 @@
 
     <section class="grid-container" id="markets-grid">
       </section>
+      <div id="no-results" style="display: none; text-align: center; padding: 50px; color: #aaa; font-family: 'Syne', sans-serif;">
+    <div style="font-size: 50px; margin-bottom: 10px;">🔍</div>
+    <h3>No matching pairs found</h3>
+    <p>Try searching for Gold, BTC, or AAPL</p>
+</div>
 
     <section class="news-section" style="margin-top: 40px;">
       <div class="section-head">
