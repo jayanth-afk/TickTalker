@@ -3,9 +3,13 @@
 const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
 const REST_URL = 'https://finnhub.io/api/v1';
 
-// 1. Grab the symbol from the URL
+// 1. Grab the symbol from the URL and immediately strip ALL underscores
 const urlParams = new URLSearchParams(window.location.search);
-const currentSymbol = urlParams.get('symbol');
+const rawSymbol = urlParams.get('symbol');
+const currentSymbol = rawSymbol ? rawSymbol.replace(/_/g, '') : null;
+
+console.log("Raw symbol from URL:", rawSymbol);
+console.log("Clean symbol (no underscores):", currentSymbol);
 
 let oldPrice = 0; // Keep track of the price for directional flashing
 
@@ -135,58 +139,92 @@ function connectLiveFeed() {
     });
 }
 
-// 5. The Fallback Dictionary (Same as app.js)
 function getWeekendFallback(symbol) {
     const fallbacks = {
-        'OANDA:XAU_USD': 4748.18, 'OANDA:XAG_USD': 45.40, 'OANDA:XAU_EUR': 4047.55, 'OANDA:XAU_AUD': 7120.10, 'OANDA:XAU_JPY': 716000.00,
-        'OANDA:EUR_USD': 1.1731, 'OANDA:GBP_USD': 1.3140, 'OANDA:USD_JPY': 151.20, 'OANDA:USD_CHF': 0.8820, 'OANDA:AUD_USD': 0.6650, 
-        'OANDA:USD_CAD': 1.3480, 'OANDA:NZD_USD': 0.6110, 'OANDA:EUR_GBP': 0.8930, 'OANDA:EUR_JPY': 177.30, 'OANDA:GBP_JPY': 198.60, 
-        'OANDA:AUD_JPY': 100.50, 'OANDA:EUR_AUD': 1.7640, 'OANDA:GBP_AUD': 1.9750, 'OANDA:USD_INR': 83.35, 'OANDA:EUR_INR': 97.75,
+        'OANDA:XAUUSD': 4748.18, 'OANDA:XAGUSD': 45.40, 'OANDA:XAUEUR': 4047.55, 'OANDA:XAUAUD': 7120.10, 'OANDA:XAUJPY': 716000.00,
+        'OANDA:EURUSD': 1.1731, 'OANDA:GBPUSD': 1.3140, 'OANDA:USDJPY': 151.20, 'OANDA:USDCHF': 0.8820, 'OANDA:AUDUSD': 0.6650,
+        'OANDA:USDCAD': 1.3480, 'OANDA:NZDUSD': 0.6110, 'OANDA:EURGBP': 0.8930, 'OANDA:EURJPY': 177.30, 'OANDA:GBPJPY': 198.60,
+        'OANDA:AUDJPY': 100.50, 'OANDA:EURAUD': 1.7640, 'OANDA:GBPAUD': 1.9750, 'OANDA:USDINR': 83.35, 'OANDA:EURINR': 97.75,
         'BINANCE:BCHUSDT': 510.50, 'BINANCE:MKRUSDT': 3450.00, 'BINANCE:APTUSDT': 15.45, 'BINANCE:ATOMUSDT': 11.20,
         'BINANCE:BTCUSDT': 70830.75, 'BINANCE:ETHUSDT': 3850.25
     };
-    return fallbacks[symbol] || null; 
+    return fallbacks[symbol] || null;
 }
 // === FEATURE: TRADINGVIEW CHART INJECTION ===
+// === FEATURE: TRADINGVIEW CHART INJECTION (Cleaned for Forex) ===
+// === FEATURE: TRADINGVIEW CHART INJECTION (Final Fix) ===
+// === FINAL BULLETPROOF CHART FIX ===
+// === FIX: FORCING CLEAN SYMBOLS FOR FOREX ===
 function loadTradingViewChart() {
+
+    // currentSymbol is already clean (no underscores) — just fix the prefix
     let tvSymbol = currentSymbol;
 
-    // Fix for Forex (e.g., OANDA:XAU_USD -> FX_IDC:XAUUSD)
     if (currentSymbol.includes('OANDA:')) {
-        tvSymbol = currentSymbol.replace('OANDA:', '').replace('_', '');
-        // For Gold/Silver, FX_IDC is usually more reliable for free data
-        if(tvSymbol.includes('XAU') || tvSymbol.includes('XAG')) {
-            tvSymbol = "FX_IDC:" + tvSymbol;
+        const pair = currentSymbol.split(':')[1]; // e.g. "XAUUSD", "EURUSD"
+        if (pair.includes('XAU') || pair.includes('XAG')) {
+            tvSymbol = 'OANDA:' + pair;  // Metals stay on OANDA
+        } else {
+            tvSymbol = 'FX:' + pair;     // All forex: EURUSD, GBPUSD, NZDUSD etc.
         }
     }
-    
-    // Fix for Crypto (TradingView likes BINANCE:BTCUSDT as is)
-    
+    // Crypto (BINANCE:BTCUSDT) — no change needed
+
+    console.log("TradingView loading symbol:", tvSymbol);
+
     try {
         new TradingView.widget({
             "autosize": true,
             "symbol": tvSymbol,
-            "interval": "15", // 15-minute candles for better day-trading view
+            "interval": "15",
             "timezone": "Etc/UTC",
             "theme": "dark",
             "style": "1",
             "locale": "en",
             "toolbar_bg": "#f1f3f6",
             "enable_publishing": false,
-            "allow_symbol_change": true, // Let's you switch symbols on the fly
+            "hide_side_toolbar": false,
+            "allow_symbol_change": true,
             "container_id": "tradingview_widget",
-            "backgroundColor": "rgba(7, 11, 20, 1)", // Matches your --bg-deep perfectly
+            "backgroundColor": "rgba(7, 11, 20, 1)",
             "gridColor": "rgba(255, 255, 255, 0.05)"
         });
     } catch (e) {
-        console.error("TradingView failed to load:", e);
+        console.error("TV Widget Error:", e);
     }
 }
-
+// === LIGHT / DARK MODE TOGGLE ===
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  const btn = document.getElementById('theme-toggle');
+  btn.textContent = isLight ? '☀️ Light' : '🌙 Dark';
+  btn.style.color = isLight ? '#0d1117' : '#f0f2f8';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+// Apply saved theme on page load
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.textContent = '☀️ Light';
+      btn.style.color = '#0d1117';
+    }
+  }
+})();
 // Run the setup
+// Wait for tv.js to finish loading before injecting the widget
+function waitForTradingView() {
+    if (typeof TradingView !== 'undefined') {
+        loadTradingViewChart();
+    } else {
+        setTimeout(waitForTradingView, 100);
+    }
+}
 document.addEventListener('DOMContentLoaded', () => {
     setupUI();
     fetchInitialPrice();
     connectLiveFeed();
-    loadTradingViewChart();
+    waitForTradingView();
 });

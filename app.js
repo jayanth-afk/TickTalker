@@ -299,5 +299,26 @@ async function fetchMarketNews() {
         `).join('');
     } catch (err) {}
 }
+// === LIGHT / DARK MODE TOGGLE ===
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  const btn = document.getElementById('theme-toggle');
+  btn.textContent = isLight ? '☀️ Light' : '🌙 Dark';
+  btn.style.color = isLight ? '#0d1117' : '#f0f2f8';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+// Apply saved theme on page load
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.textContent = '☀️ Light';
+      btn.style.color = '#0d1117';
+    }
+  }
+})();
 
 document.addEventListener('DOMContentLoaded', init);

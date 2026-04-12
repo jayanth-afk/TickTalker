@@ -291,3 +291,39 @@ body {
 .market-symbol { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--gold-dim); }
 .market-price { font-family: var(--font-head); font-size: 32px; font-weight: 800; color: var(--text); transition: color 0.15s ease-out; }
 .market-time { font-size: 11px; color: var(--text-mute); font-family: monospace; margin-top: auto; }
+/* ── LIGHT MODE ───────────────────────────── */
+body.light {
+  background: #f0f2f8;
+  color: #0d1117;
+}
+body.light .glass {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.10);
+}
+body.light .glass::before {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, transparent 60%);
+}
+body.light .market-symbol { color: #8a6a00; }
+body.light #detail-price  { color: #0d1117 !important; }
+body.light .market-time   { color: #888; }
+body.light .search-input,
+body.light .sort-select {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(0,0,0,0.12);
+  color: #0d1117;
+}
+body.light .card-title    { color: #0d1117; }
+body.light .news-headline { color: #0d1117; }
+body.light .news-summary  { color: #555; }
+body.light .footer        { color: #888; border-color: rgba(0,0,0,0.10); }
+body.light .logo-text     { color: #0d1117; }
+body.light .clock         { color: #555; }
+body.light .pill          { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.10); color: #555; }
+body.light .hero-price    { color: #8a6a00; }
+body.light .bg-orb        { opacity: 0.08; }
+body.light #theme-toggle  {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.12);
+  color: #0d1117;
+}
+body.light .logo-tick { color: #0d1117 !important; }
