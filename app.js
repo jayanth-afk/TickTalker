@@ -1,4 +1,4 @@
-/* TICKTALKER — V3 (Directional Flashing & Visual Polish) */
+/* TICKTALKER */
 
 const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
 const WS_URL  = `wss://ws.finnhub.io?token=${API_KEY}`;
@@ -23,7 +23,7 @@ const marketsToTrack = [
 
 let socket;
 
-// === ENTRY POINT ===
+//ENTRY POINT
 function init() {
     startClock();
     updateMarketHeaderStatus(); // Updates the Red/Green Forex pill
@@ -36,7 +36,7 @@ function init() {
     document.getElementById('sort-select').addEventListener('change', sortMarkets);
 }
 
-// === FEATURE: HEADER STATUS CHECKER ===
+//FEATURE: HEADER STATUS CHECKER
 function updateMarketHeaderStatus() {
     const dot = document.getElementById('market-dot');
     const label = document.getElementById('market-label');
@@ -54,8 +54,8 @@ function updateMarketHeaderStatus() {
     }
 }
 
-// === FEATURE: VISUAL POLISH (ICONS) ===
-// === FEATURE: VISUAL POLISH (COMPLETE ICON DICTIONARY) ===
+//FEATURE: VISUAL POLISH (ICONS)
+//FEATURE: VISUAL POLISH (COMPLETE ICON DICTIONARY)
 function getMarketIcon(symbol) {
     // 🥇 METALS
     if (symbol.includes('XAU')) return '🥇'; // Gold
@@ -112,7 +112,7 @@ function getMarketIcon(symbol) {
     return '🏢'; // Stocks
 }
 
-// === BUILD THE HTML CARDS ===
+//BUILD THE HTML CARDS
 function buildMarketGrid() {
     const grid = document.getElementById('markets-grid');
     grid.innerHTML = ''; 
@@ -144,7 +144,7 @@ function buildMarketGrid() {
     });
 }
 
-// === WEBSOCKET & DIRECTIONAL FLASHING ===
+//WEBSOCKET & DIRECTIONAL FLASHING
 function connectWebSocket() {
     socket = new WebSocket(WS_URL);
 
@@ -191,7 +191,7 @@ function connectWebSocket() {
     });
 }
 
-// === WEEKEND FALLBACK (Keeps Dashboard Looking Good) ===
+//WEEKEND FALLBACK (Keeps Dashboard Looking Good)
 async function fetchInitialPrices() {
     for (const symbol of marketsToTrack) {
         try {
@@ -215,7 +215,7 @@ async function fetchInitialPrices() {
     }
 }
 
-// === WEEKEND FALLBACK DICTIONARY (Updated for April 12, 2026) ===
+//WEEKEND FALLBACK DICTIONARY (Updated for April 12, 2026)
 // Injects the actual weekend closing prices so the dashboard is accurate.
 function getWeekendFallback(symbol) {
     const fallbacks = {
@@ -241,7 +241,7 @@ function getWeekendFallback(symbol) {
     return fallbacks[symbol] || null; 
 }
 
-// === SEARCH & SORT ===
+//SEARCH & SORT
 function filterMarkets(e) {
     const query = e.target.value.toLowerCase();
     const cards = document.querySelectorAll('.market-card');
@@ -281,7 +281,7 @@ function sortMarkets(e) {
     cards.forEach(card => grid.appendChild(card));
 }
 
-// === UI HELPERS ===
+//UI HELPERS
 function startClock() {
     setInterval(() => { document.getElementById('live-clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false }); }, 1000);
 }
@@ -299,7 +299,7 @@ async function fetchMarketNews() {
         `).join('');
     } catch (err) {}
 }
-// === LIGHT / DARK MODE TOGGLE ===
+//LIGHT / DARK MODE TOGGLE
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light');
   const btn = document.getElementById('theme-toggle');
