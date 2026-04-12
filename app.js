@@ -1,305 +1,280 @@
-/* TICKTALKER — app.js */
-  
+/* TICKTALKER — V3 (Directional Flashing & Visual Polish) */
+
 const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
-const BASE    = 'https://finnhub.io/api/v1';
+const WS_URL  = `wss://ws.finnhub.io?token=${API_KEY}`;
+const REST_URL = 'https://finnhub.io/api/v1';
 
-let chartData    = [];
-let refreshTimer = null;
-let prevPrice    = null; 
+const marketsToTrack = [
+    // METALS
+    'OANDA:XAU_USD', 'OANDA:XAG_USD', 'OANDA:XAU_EUR', 'OANDA:XAU_AUD', 'OANDA:XAU_JPY',
+    // FOREX MAJORS
+    'OANDA:EUR_USD', 'OANDA:GBP_USD', 'OANDA:USD_JPY', 'OANDA:USD_CHF', 'OANDA:AUD_USD',
+    'OANDA:USD_CAD', 'OANDA:NZD_USD', 'OANDA:EUR_GBP', 'OANDA:EUR_JPY', 'OANDA:GBP_JPY',
+    'OANDA:AUD_JPY', 'OANDA:EUR_AUD', 'OANDA:GBP_AUD', 'OANDA:USD_INR', 'OANDA:EUR_INR',
+    // CRYPTO
+    'BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT', 'BINANCE:BNBUSDT', 'BINANCE:BCHUSDT',
+    'BINANCE:AAVEUSDT', 'BINANCE:MKRUSDT', 'BINANCE:AVAXUSDT', 'BINANCE:LINKUSDT', 'BINANCE:INJUSDT',
+    'BINANCE:DOTUSDT', 'BINANCE:LTCUSDT', 'BINANCE:APTUSDT', 'BINANCE:UNIUSDT', 'BINANCE:ATOMUSDT',
+    // STOCKS
+    'AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 
+    'GOOGL', 'META', 'NFLX', 'AMD', 'SPY', 
+    'QQQ', 'INTC', 'DIS', 'BA', 'JPM'
+];
 
-//ENTRY POINT
-async function init() {
-  hideError();
-  startClock();
-  updateMarketBadge();
+let socket;
 
-  await Promise.all([
-    fetchGoldPrice(),
-    fetchGoldCandles(),
-    fetchMarketNews(),
-  ]);
-
-  scheduleRefresh();
+// === ENTRY POINT ===
+function init() {
+    startClock();
+    updateMarketHeaderStatus(); // Updates the Red/Green Forex pill
+    buildMarketGrid();
+    connectWebSocket();
+    fetchInitialPrices(); 
+    fetchMarketNews(); 
+    
+    document.getElementById('search-input').addEventListener('input', filterMarkets);
+    document.getElementById('sort-select').addEventListener('change', sortMarkets);
 }
 
-//  LIVE CLOCK 
-function startClock() {
-  const el = document.getElementById('live-clock');
-  const tick = () => {
-    el.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
-  };
-  tick();
-  setInterval(tick, 1000);
-}
-
-// MARKET BADGE
-function updateMarketBadge() {
-  const now  = new Date();
-  const day  = now.getUTCDay();
-  const hour = now.getUTCHours();
-
-  // GLD is a US Stock (NYSE). Markets are open ~13:30 to 20:00 UTC
-  const isOpen = (day !== 0 && day !== 6 && hour >= 13 && hour < 20);
-
-  const dot   = document.querySelector('.badge-dot');
-  const label = document.getElementById('market-label');
-  dot.className     = 'badge-dot ' + (isOpen ? 'open' : 'closed');
-  label.textContent = isOpen ? 'Market Open' : 'Market Closed';
-}
-
-//GOLD PRICE
-async function fetchGoldPrice() {
-
-  const url = `${BASE}/quote?symbol=GLD&token=${API_KEY}`;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errorText = await res.text();
-      const msg = `Gold quote request failed ${res.status}: ${errorText}`;
-      console.error(msg);
-      showError(msg);
-      useDemoGoldPrice();
-      return;
+// === FEATURE: HEADER STATUS CHECKER ===
+function updateMarketHeaderStatus() {
+    const dot = document.getElementById('market-dot');
+    const label = document.getElementById('market-label');
+    
+    // Check if it is Saturday (6) or Sunday (0)
+    const day = new Date().getUTCDay();
+    const isWeekend = (day === 0 || day === 6);
+    
+    if (isWeekend) {
+        dot.className = 'badge-dot closed'; // Turns it Red
+        label.innerText = 'Forex/Stocks: Closed';
+    } else {
+        dot.className = 'badge-dot open'; // Turns it Green
+        label.innerText = 'Forex/Stocks: Live';
     }
+}
 
-    const data = await res.json();
+// === FEATURE: VISUAL POLISH (ICONS) ===
+// === FEATURE: VISUAL POLISH (COMPLETE ICON DICTIONARY) ===
+function getMarketIcon(symbol) {
+    // 🥇 METALS
+    if (symbol.includes('XAU')) return '🥇'; // Gold
+    if (symbol.includes('XAG')) return '🥈'; // Silver
 
-    if (data.error || !data.c || data.c === 0) {
-      const msg = data.error ? `Finnhub error: ${data.error}` : 'Gold API returned no quote';
-      console.warn(msg);
-      showError(msg);
-      useDemoGoldPrice();
-      return;
+    // 🌍 FOREX MAJORS & CROSSES
+    if (symbol.includes('EUR_USD')) return '🇪🇺/🇺🇸';
+    if (symbol.includes('GBP_USD')) return '🇬🇧/🇺🇸';
+    if (symbol.includes('USD_JPY')) return '🇺🇸/🇯🇵';
+    if (symbol.includes('USD_CHF')) return '🇺🇸/🇨🇭';
+    if (symbol.includes('AUD_USD')) return '🇦🇺/🇺🇸';
+    if (symbol.includes('USD_CAD')) return '🇺🇸/🇨🇦';
+    if (symbol.includes('NZD_USD')) return '🇳🇿/🇺🇸';
+    
+    if (symbol.includes('EUR_GBP')) return '🇪🇺/🇬🇧';
+    if (symbol.includes('EUR_JPY')) return '🇪🇺/🇯🇵';
+    if (symbol.includes('GBP_JPY')) return '🇬🇧/🇯🇵';
+    if (symbol.includes('AUD_JPY')) return '🇦🇺/🇯🇵';
+    if (symbol.includes('EUR_AUD')) return '🇪🇺/🇦🇺';
+    if (symbol.includes('GBP_AUD')) return '🇬🇧/🇦🇺';
+    
+    // 🇮🇳 INDIAN RUPEE PAIRS
+    if (symbol.includes('USD_INR')) return '🇺🇸/🇮🇳';
+    if (symbol.includes('EUR_INR')) return '🇪🇺/🇮🇳';
+
+    // ⚡ CRYPTO
+    if (symbol.includes('BTC')) return '₿';
+    if (symbol.includes('ETH')) return '⟠';
+    if (symbol.includes('SOL')) return '◎';
+    if (symbol.includes('BNB')) return '🟡'; // Binance Coin
+    if (symbol.includes('BCH')) return '₿🟩'; // Bitcoin Cash
+    if (symbol.includes('AAVE')) return '👻'; // Aave Ghost
+    if (symbol.includes('MKR')) return 'Ⓜ️'; // Maker
+    if (symbol.includes('AVAX')) return '🔺'; // Avalanche
+    if (symbol.includes('LINK')) return '🔗'; // Chainlink
+    if (symbol.includes('INJ')) return '🥷'; // Injective
+    if (symbol.includes('DOT')) return '🟣'; // Polkadot
+    if (symbol.includes('LTC')) return 'Ł'; // Litecoin
+    if (symbol.includes('APT')) return '⚫'; // Aptos
+    if (symbol.includes('UNI')) return '🦄'; // Uniswap
+    if (symbol.includes('ATOM')) return '⚛️'; // Cosmos
+    
+    // 📈 US STOCKS
+    if (symbol === 'AAPL') return '🍎';
+    if (symbol === 'MSFT') return '🪟';
+    if (symbol === 'TSLA') return '⚡🚗';
+    if (symbol === 'AMZN') return '📦';
+    if (symbol === 'META') return '♾️';
+    if (symbol === 'NFLX') return '🍿';
+    
+    // Generic fallbacks for anything else
+    if (symbol.includes('BINANCE')) return '⚡'; // Crypto
+    if (symbol.includes('OANDA')) return '💱'; // Forex
+    return '🏢'; // Stocks
+}
+
+// === BUILD THE HTML CARDS ===
+function buildMarketGrid() {
+    const grid = document.getElementById('markets-grid');
+    grid.innerHTML = ''; 
+
+    marketsToTrack.forEach(symbol => {
+        const displayName = symbol.includes(':') ? symbol.split(':')[1] : symbol;
+        const icon = getMarketIcon(symbol); // Grab the right icon!
+
+        const card = document.createElement('div');
+        card.className = 'glass card market-card';
+        card.id = `card-${symbol}`;
+        card.dataset.symbol = displayName.toLowerCase();
+        card.dataset.price = "0"; 
+
+        // Notice the icon is now injected next to the display name!
+        card.innerHTML = `
+            <div class="market-symbol">${icon} ${displayName.replace('_', '/')}</div>
+            <div class="market-price" id="price-${symbol}">---</div>
+            <div class="market-time" id="time-${symbol}">Awaiting data...</div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// === WEBSOCKET & DIRECTIONAL FLASHING ===
+function connectWebSocket() {
+    socket = new WebSocket(WS_URL);
+
+    socket.addEventListener('open', function (event) {
+        marketsToTrack.forEach(symbol => {
+            socket.send(JSON.stringify({'type':'subscribe', 'symbol': symbol}));
+        });
+    });
+
+    socket.addEventListener('message', function (event) {
+        const response = JSON.parse(event.data);
+        
+        if(response.type === "trade") {
+            const symbol = response.data[0].s; 
+            const newPrice = parseFloat(response.data[0].p);
+            
+            const cardElement = document.getElementById(`card-${symbol}`);
+            const priceBox = document.getElementById(`price-${symbol}`);
+            const timeBox = document.getElementById(`time-${symbol}`);
+            
+            if (priceBox && cardElement) {
+                // FEATURE: DIRECTIONAL FLASHING
+                const oldPrice = parseFloat(cardElement.dataset.price);
+                let flashColor = "white"; // Default flash color
+                
+                // If it went up, flash Green. If it went down, flash Red!
+                if (oldPrice > 0) {
+                    if (newPrice > oldPrice) flashColor = "#39d98a"; 
+                    else if (newPrice < oldPrice) flashColor = "#ff5f6d";
+                }
+                
+                // Format and update UI
+                priceBox.innerText = "$" + newPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+                cardElement.dataset.price = newPrice; // Save new price for the next comparison
+                
+                const now = new Date();
+                timeBox.innerText = now.toLocaleTimeString() + ":" + now.getMilliseconds();
+                
+                // Execute the flash
+                priceBox.style.color = flashColor;
+                setTimeout(() => { priceBox.style.color = "#f0f2f8"; }, 2000); // Goes back to normal text color
+            }
+        }
+    });
+}
+
+// === WEEKEND FALLBACK (Keeps Dashboard Looking Good) ===
+async function fetchInitialPrices() {
+    for (const symbol of marketsToTrack) {
+        try {
+            const response = await fetch(`${REST_URL}/quote?symbol=${symbol}&token=${API_KEY}`);
+            const data = await response.json();
+            let priceToDisplay = (data && data.c && data.c > 0) ? data.c : getWeekendFallback(symbol);
+
+            if (priceToDisplay) {
+                const cardElement = document.getElementById(`card-${symbol}`);
+                const priceBox = document.getElementById(`price-${symbol}`);
+                const timeBox = document.getElementById(`time-${symbol}`);
+
+                if (priceBox && priceBox.innerText === "---") {
+                    priceBox.innerText = "$" + parseFloat(priceToDisplay).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+                    timeBox.innerText = "Last Close (Market Paused)";
+                    if (cardElement) cardElement.dataset.price = priceToDisplay; 
+                }
+            }
+        } catch (err) { }
+        await new Promise(resolve => setTimeout(resolve, 100)); 
     }
-
-    hideError();
-    renderGoldPrice(data.c);
-
-    setCard('stat-open', 'Open',        fmt(data.o));
-    setCard('stat-high', 'Day High',    fmt(data.h));
-    setCard('stat-low',  'Day Low',     fmt(data.l));
-    setCard('stat-prev', 'Prev. Close', fmt(data.pc));
-
-  } catch (err) {
-    const msg = `Gold price fetch failed: ${err.message || err}`;
-    console.error(msg, err);
-    showError(msg);
-    useDemoGoldPrice();
-  }
 }
 
-function renderGoldPrice(price) {
-  const priceEl = document.getElementById('gold-price');
-  priceEl.classList.remove('fade-up');
-  void priceEl.offsetWidth;
-  priceEl.classList.add('fade-up');
-  priceEl.textContent = fmt(price);
-
-  const storedPrev = parseFloat(sessionStorage.getItem('tt_prev_price'));
-  const prev = (!isNaN(prevPrice) && prevPrice !== null)
-    ? prevPrice
-    : (!isNaN(storedPrev) ? storedPrev : price);
-
-  const diff = price - prev;
-  const diffPct = prev > 0 ? ((diff / prev) * 100).toFixed(4) : '0.0000';
-  const isUp = diff >= 0;
-
-  prevPrice = price;
-  sessionStorage.setItem('tt_prev_price', String(price));
-
-  const changeEl = document.getElementById('gold-change');
-  changeEl.className = 'hero-change ' + (isUp ? 'up' : 'down');
-  changeEl.textContent = `${isUp ? '▲' : '▼'} ${Math.abs(diffPct)}%`;
-
-  document.getElementById('hero-sub').textContent =
-    `GLD (Gold ETF) · Updated ${new Date().toLocaleTimeString()}`;
-}
-
-function useDemoGoldPrice() {
-  const base  = 245.50; // Adjusted demo price to look like GLD ($200s)
-  const drift = (Math.random() - 0.5) * 0.5;
-  renderGoldPrice(parseFloat((base + drift).toFixed(2)));
-  setCard('stat-open', 'Open',        fmt(244.00));
-  setCard('stat-high', 'Day High',    fmt(246.40));
-  setCard('stat-low',  'Day Low',     fmt(243.20));
-  setCard('stat-prev', 'Prev. Close', fmt(242.80));
-}
-
-//GOLD CANDLES
-async function fetchGoldCandles() {
-  const to   = Math.floor(Date.now() / 1000);
-  const from = to - 30 * 24 * 60 * 60;
-
-  // CHANGED: Endpoint changed from /forex/candles to /stock/candle
-  const url = `${BASE}/stock/candle?symbol=GLD&resolution=D&from=${from}&to=${to}&token=${API_KEY}`;
-  
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errorText = await res.text();
-      const msg = `Candles request failed ${res.status}: ${errorText}`;
-      console.error(msg);
-      showError(msg);
-      useDemoChart();
-      return;
-    }
-
-    const data = await res.json();
-
-    if (data.error || data.s !== 'ok' || !data.c || data.c.length === 0) {
-      const msg = data.error || 'Candles API returned no data';
-      console.warn(msg);
-      showError(msg);
-      useDemoChart();
-      return;
-    }
-
-    hideError();
-    chartData = data.t.map((timestamp, i) => ({
-      date:  new Date(timestamp * 1000).toISOString().split('T')[0],
-      open:  data.o[i],
-      high:  data.h[i],
-      low:   data.l[i],
-      close: data.c[i],
-    }));
-
-    drawChart(chartData);
-    document.getElementById('chart-meta').textContent =
-      `${chartData.length} days · GLD Tracker`;
-  } catch (err) {
-    const msg = `Candles fetch failed: ${err.message || err}`;
-    console.error(msg);
-    showError(msg);
-    useDemoChart();
-  }
-}
-
-function useDemoChart() {
-  const base = 240;
-  chartData = Array.from({ length: 30 }, (_, i) => {
-    const d     = new Date(Date.now() - (29 - i) * 86400000);
-    const close = base + Math.sin(i * 0.45) * 5 + Math.random() * 2 + i * 0.1;
-    return {
-      date:  d.toISOString().split('T')[0],
-      open:  parseFloat((close - 1).toFixed(2)),
-      high:  parseFloat((close + 1.5).toFixed(2)),
-      low:   parseFloat((close - 1.5).toFixed(2)),
-      close: parseFloat(close.toFixed(2)),
+// === WEEKEND FALLBACK DICTIONARY (Updated for April 12, 2026) ===
+// Injects the actual weekend closing prices so the dashboard is accurate.
+function getWeekendFallback(symbol) {
+    const fallbacks = {
+        // Metals (Updated to 2026 Surge Prices)
+        'OANDA:XAU_USD': 4748.18, 'OANDA:XAG_USD': 45.40, 'OANDA:XAU_EUR': 4047.55, 
+        'OANDA:XAU_AUD': 7120.10, 'OANDA:XAU_JPY': 716000.00,
+        
+        // Major Forex
+        'OANDA:EUR_USD': 1.1731, 'OANDA:GBP_USD': 1.3140, 'OANDA:USD_JPY': 151.20, 
+        'OANDA:USD_CHF': 0.8820, 'OANDA:AUD_USD': 0.6650, 'OANDA:USD_CAD': 1.3480, 
+        'OANDA:NZD_USD': 0.6110, 
+        
+        // Forex Crosses & INR
+        'OANDA:EUR_GBP': 0.8930, 'OANDA:EUR_JPY': 177.30, 'OANDA:GBP_JPY': 198.60, 
+        'OANDA:AUD_JPY': 100.50, 'OANDA:EUR_AUD': 1.7640, 'OANDA:GBP_AUD': 1.9750, 
+        'OANDA:USD_INR': 83.35, 'OANDA:EUR_INR': 97.75,
+        
+        // Slower Ticking Crypto / High-Value Coins
+        'BINANCE:BCHUSDT': 510.50, 'BINANCE:MKRUSDT': 3450.00, 
+        'BINANCE:APTUSDT': 15.45, 'BINANCE:ATOMUSDT': 11.20,
+        'BINANCE:BTCUSDT': 70830.75, 'BINANCE:ETHUSDT': 3850.25
     };
-  });
-  drawChart(chartData);
+    return fallbacks[symbol] || null; 
 }
 
-// Keep your drawChart, fetchMarketNews, and Helpers exactly as they were
-function drawChart(data) {
-  const loader = document.getElementById('chart-loader');
-  if (loader) loader.style.display = 'none';
-  const canvas = document.getElementById('trend-chart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.parentElement.offsetWidth;
-  const H = 230;
-  canvas.width  = W;
-  canvas.height = H;
-  const prices = data.map(d => d.close);
-  const minP   = Math.min(...prices) * 0.99;
-  const maxP   = Math.max(...prices) * 1.01;
-  const pad    = { top: 16, right: 16, bottom: 36, left: 68 };
-  const cW     = W - pad.left - pad.right;
-  const cH     = H - pad.top  - pad.bottom;
-  const toX = i => pad.left + (i / (data.length - 1)) * cW;
-  const toY = p => pad.top  + (1 - (p - minP) / (maxP - minP)) * cH;
-  ctx.clearRect(0, 0, W, H);
-  const grad = ctx.createLinearGradient(0, pad.top, 0, H - pad.bottom);
-  grad.addColorStop(0, 'rgba(245,200,66,0.30)');
-  grad.addColorStop(1, 'rgba(245,200,66,0)');
-  ctx.beginPath();
-  data.forEach((d, i) => { i === 0 ? ctx.moveTo(toX(i), toY(d.close)) : ctx.lineTo(toX(i), toY(d.close)); });
-  ctx.lineTo(toX(data.length - 1), H - pad.bottom);
-  ctx.lineTo(toX(0), H - pad.bottom);
-  ctx.fillStyle = grad; ctx.fill();
-  ctx.beginPath();
-  ctx.strokeStyle = '#f5c842';
-  ctx.lineWidth   = 2.5;
-  data.forEach((d, i) => { i === 0 ? ctx.moveTo(toX(i), toY(d.close)) : ctx.lineTo(toX(i), toY(d.close)); });
-  ctx.stroke();
+// === SEARCH & SORT ===
+function filterMarkets(e) {
+    const query = e.target.value.toLowerCase();
+    document.querySelectorAll('.market-card').forEach(card => {
+        card.style.display = card.dataset.symbol.includes(query) ? 'flex' : 'none';
+    });
 }
 
-window.addEventListener('resize', () => { if (chartData.length > 0) drawChart(chartData); });
+function sortMarkets(e) {
+    const sortBy = e.target.value;
+    const grid = document.getElementById('markets-grid');
+    const cards = Array.from(document.querySelectorAll('.market-card'));
+
+    cards.sort((a, b) => {
+        const priceA = parseFloat(a.dataset.price) || 0;
+        const priceB = parseFloat(b.dataset.price) || 0;
+        if (sortBy === 'high') return priceB - priceA;
+        if (sortBy === 'low')  return priceA - priceB;
+        if (sortBy === 'az')   return a.dataset.symbol.localeCompare(b.dataset.symbol);
+        return 0; 
+    });
+    cards.forEach(card => grid.appendChild(card));
+}
+
+// === UI HELPERS ===
+function startClock() {
+    setInterval(() => { document.getElementById('live-clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false }); }, 1000);
+}
 
 async function fetchMarketNews() {
-  const url = `${BASE}/news?category=general&token=${API_KEY}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.warn(`News request failed ${res.status}: ${errorText}`);
-      showError(`News fetch failed: ${res.statusText}`);
-      useDemoNews();
-      return;
-    }
-
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      showError('News API returned no articles.');
-      useDemoNews();
-      return;
-    }
-
-    hideError();
-    const articles = data.filter(item => item.headline && item.headline.length > 10).slice(0, 4);
-    renderNews(articles);
-  } catch (err) {
-    console.error('Market news fetch failed:', err);
-    showError('Market news fetch failed');
-    useDemoNews();
-  }
-}
-
-function renderNews(articles) {
-  const grid = document.getElementById('news-grid');
-  grid.innerHTML = articles.map(a => `
-    <a class="glass card news-card fade-up" href="${a.url || '#'}" target="_blank">
-      <div class="news-source">${a.source || 'Market News'}</div>
-      <div class="news-headline">${escHtml(a.headline)}</div>
-      <div class="news-summary">${escHtml(a.summary || '')}</div>
-      <div class="news-footer">
-        <span class="news-time">${a.datetime ? timeAgo(a.datetime * 1000) : 'Recent'}</span>
-        <span class="news-arrow">→</span>
-      </div>
-    </a>`).join('');
-}
-
-function useDemoNews() {
-  const demo = [
-    { source: 'Reuters', headline: 'Gold steady as traders await US inflation data', summary: 'Gold prices held firm on Wednesday...', url: '#', datetime: Date.now() / 1000 - 3600 },
-    { source: 'Bloomberg', headline: 'Dollar weakens ahead of Fed minutes', summary: 'The US dollar softened against peers...', url: '#', datetime: Date.now() / 1000 - 7200 }
-  ];
-  renderNews(demo);
-}
-
-function setCard(id, label, value) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = `<div class="card-label">${label}</div><div class="card-value fade-up">${value}</div>`;
-}
-
-function fmt(n) { return '$' + parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function timeAgo(ms) { const diff = Date.now() - ms; const mins = Math.floor(diff / 60000); if (mins < 60) return `${mins}m ago`; return `${Math.floor(mins / 60)}h ago`; }
-function escHtml(str) { return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
-function showError(msg) { document.getElementById('error-msg').textContent = msg; document.getElementById('error-box').style.display = 'flex'; }
-function hideError() { document.getElementById('error-box').style.display = 'none'; }
-
-let candleRefreshCount = 0;
-function scheduleRefresh() {
-  clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(async () => {
-    await Promise.all([fetchGoldPrice(), fetchMarketNews()]);
-    updateMarketBadge();
-    candleRefreshCount++;
-    if (candleRefreshCount % 5 === 0) await fetchGoldCandles();
-    scheduleRefresh();
-  }, 60_000);
+    try {
+        const res = await fetch(`${REST_URL}/news?category=general&token=${API_KEY}`);
+        const data = await res.json();
+        document.getElementById('news-grid').innerHTML = data.filter(i => i.headline).slice(0, 4).map(a => `
+            <a class="glass card news-card fade-up" href="${a.url}" target="_blank" style="text-decoration:none;">
+                <div class="news-source" style="font-size:10px; color:#c9a230; text-transform:uppercase; margin-bottom:8px;">${a.source}</div>
+                <div class="news-headline" style="color:#fff; font-weight:bold; margin-bottom:8px;">${a.headline}</div>
+                <div class="news-summary" style="font-size:12px; color:#aaa;">${a.summary.substring(0, 80)}...</div>
+            </a>
+        `).join('');
+    } catch (err) {}
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -266,3 +266,28 @@ body {
   .hero-price { font-size: 52px; }
   .main       { padding: 28px 16px 80px; }
 }
+/* ── MULTI-MARKET GRID & CONTROLS ───────────────── */
+.controls-bar {
+  display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; position: relative; z-index: 10;
+}
+.search-wrap { flex: 1; min-width: 280px; }
+.sort-wrap { width: 220px; }
+.search-input, .sort-select {
+  width: 100%; padding: 14px 20px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); color: var(--text);
+  font-family: var(--font-body); font-size: 15px; outline: none;
+  backdrop-filter: var(--blur); transition: border-color var(--transition);
+}
+.search-input:focus, .sort-select:focus { border-color: var(--gold-glow); }
+.sort-select option { background: var(--bg-deep); color: var(--text); }
+
+.grid-container {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+}
+.market-card {
+  display: flex; flex-direction: column; gap: 6px; padding: 20px;
+}
+.market-symbol { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--gold-dim); }
+.market-price { font-family: var(--font-head); font-size: 32px; font-weight: 800; color: var(--text); transition: color 0.15s ease-out; }
+.market-time { font-size: 11px; color: var(--text-mute); font-family: monospace; margin-top: auto; }
