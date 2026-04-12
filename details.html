@@ -15,21 +15,20 @@
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
 
-  <header class="header glass">
-    <div class="header-inner" style="grid-template-columns: 1fr auto;">
-      <div class="logo">
-        <span class="logo-icon">◈</span>
-        <span class="logo-text">Tick<em>Talker</em></span>
-      </div>
-      <a href="index.html" style="color: #f5c842; text-decoration: none; font-weight: bold; padding: 8px 16px; border: 1px solid rgba(245, 200, 66, 0.3); border-radius: 8px;">← Back to Dashboard</a>
+  <header class="header glass" style="display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 15px 30px;">
+    <div class="logo" style="display: flex; align-items: center; gap: 10px; justify-self: start;">
+      <img src="images/title.png" alt="TickTalker Logo" style="height: 40px; width: auto;" />
+      <span class="logo-text" style="font-size: 24px; font-weight: bold; color: #f0f2f8;">Tick<em style="color: #c9a230; font-style: normal;">Talker</em></span>
     </div>
+
+    <a href="index.html" style="color: #f5c842; text-decoration: none; font-weight: bold; padding: 8px 16px; border: 1px solid rgba(245, 200, 66, 0.3); border-radius: 8px; justify-self: end;">← Back to Dashboard</a>
   </header>
 
-  <main class="main" style="text-align: center; max-width: 600px; margin-top: 50px;">
+  <main class="main" style="text-align: center; max-width: 800px; margin: 50px auto;">
     
     <div class="glass card">
       <div id="detail-icon" style="font-size: 50px; margin-bottom: 10px;">⏳</div>
-      <h1 id="detail-title" style="font-family: 'Syne', sans-serif; font-size: 32px; color: #c9a230; margin-bottom: 20px;">Loading...</h1>
+      <h1 id="detail-title" style="font-family: 'Syne', sans-serif; font-size: 32px; color: #c9a230; margin-bottom: 10px;">Loading...</h1>
       
       <div id="detail-price" style="font-family: 'Syne', sans-serif; font-size: 64px; font-weight: 800; color: #f0f2f8; transition: color 0.15s ease-out;">
         $---
@@ -37,8 +36,12 @@
       <p id="detail-time" style="color: #aaa; font-family: monospace; margin-top: 10px;">Waiting for live data...</p>
     </div>
 
-  </main>
+    <div class="glass card" style="margin-top: 24px; padding: 0; overflow: hidden; height: 500px; border-radius: 16px;">
+        <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
+    </div>
 
+  </main>
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <script src="details.js"></script>
 </body>
 </html>

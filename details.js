@@ -147,10 +147,46 @@ function getWeekendFallback(symbol) {
     };
     return fallbacks[symbol] || null; 
 }
+// === FEATURE: TRADINGVIEW CHART INJECTION ===
+function loadTradingViewChart() {
+    let tvSymbol = currentSymbol;
+
+    // Fix for Forex (e.g., OANDA:XAU_USD -> FX_IDC:XAUUSD)
+    if (currentSymbol.includes('OANDA:')) {
+        tvSymbol = currentSymbol.replace('OANDA:', '').replace('_', '');
+        // For Gold/Silver, FX_IDC is usually more reliable for free data
+        if(tvSymbol.includes('XAU') || tvSymbol.includes('XAG')) {
+            tvSymbol = "FX_IDC:" + tvSymbol;
+        }
+    }
+    
+    // Fix for Crypto (TradingView likes BINANCE:BTCUSDT as is)
+    
+    try {
+        new TradingView.widget({
+            "autosize": true,
+            "symbol": tvSymbol,
+            "interval": "15", // 15-minute candles for better day-trading view
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
+            "locale": "en",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "allow_symbol_change": true, // Let's you switch symbols on the fly
+            "container_id": "tradingview_widget",
+            "backgroundColor": "rgba(7, 11, 20, 1)", // Matches your --bg-deep perfectly
+            "gridColor": "rgba(255, 255, 255, 0.05)"
+        });
+    } catch (e) {
+        console.error("TradingView failed to load:", e);
+    }
+}
 
 // Run the setup
 document.addEventListener('DOMContentLoaded', () => {
     setupUI();
-    fetchInitialPrice(); // Fetch the static price immediately!
-    connectLiveFeed();   // Let the WebSocket take over if it's active
+    fetchInitialPrice();
+    connectLiveFeed();
+    loadTradingViewChart();
 });
