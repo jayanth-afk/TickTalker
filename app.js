@@ -36,7 +36,7 @@ function init() {
     document.getElementById('sort-select').addEventListener('change', sortMarkets);
 }
 
-//FEATURE: HEADER STATUS CHECKER
+
 function updateMarketHeaderStatus() {
     const dot = document.getElementById('market-dot');
     const label = document.getElementById('market-label');
@@ -54,8 +54,8 @@ function updateMarketHeaderStatus() {
     }
 }
 
-//FEATURE: VISUAL POLISH (ICONS)
-//FEATURE: VISUAL POLISH (COMPLETE ICON DICTIONARY)
+//(ICONS)
+//(COMPLETE ICON DICTIONARY)
 function getMarketIcon(symbol) {
     // 🥇 METALS
     if (symbol.includes('XAU')) return '🥇'; // Gold
@@ -127,7 +127,7 @@ function buildMarketGrid() {
         card.dataset.symbol = displayName.toLowerCase();
         card.dataset.price = "0"; 
 
-        // Notice the icon is now injected next to the display name!
+        
         card.innerHTML = `
             <div class="market-symbol">${icon} ${displayName.replace('_', '/')}</div>
             <div class="market-price" id="price-${symbol}">---</div>
@@ -168,30 +168,29 @@ function connectWebSocket() {
             if (priceBox && cardElement) {
                 // FEATURE: DIRECTIONAL FLASHING
                 const oldPrice = parseFloat(cardElement.dataset.price);
-                let flashColor = "white"; // Default flash color
+                let flashColor = "white"; 
                 
-                // If it went up, flash Green. If it went down, flash Red!
                 if (oldPrice > 0) {
                     if (newPrice > oldPrice) flashColor = "#39d98a"; 
                     else if (newPrice < oldPrice) flashColor = "#ff5f6d";
                 }
                 
-                // Format and update UI
+
                 priceBox.innerText = "$" + newPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
                 cardElement.dataset.price = newPrice; // Save new price for the next comparison
                 
                 const now = new Date();
                 timeBox.innerText = now.toLocaleTimeString() + ":" + now.getMilliseconds();
                 
-                // Execute the flash
+
                 priceBox.style.color = flashColor;
-                setTimeout(() => { priceBox.style.color = "#f0f2f8"; }, 2000); // Goes back to normal text color
+                setTimeout(() => { priceBox.style.color = "#f0f2f8"; }, 2000); 
             }
         }
     });
 }
 
-//WEEKEND FALLBACK (Keeps Dashboard Looking Good)
+
 async function fetchInitialPrices() {
     for (const symbol of marketsToTrack) {
         try {

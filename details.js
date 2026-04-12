@@ -3,7 +3,6 @@
 const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
 const REST_URL = 'https://finnhub.io/api/v1';
 
-// 1. Grab the symbol from the URL and immediately strip ALL underscores
 const urlParams = new URLSearchParams(window.location.search);
 const rawSymbol = urlParams.get('symbol');
 const currentSymbol = rawSymbol ? rawSymbol.replace(/_/g, '') : null;
@@ -14,7 +13,7 @@ console.log("Clean symbol (no underscores):", currentSymbol);
 let oldPrice = 0; // Keep track of the price for directional flashing
 
 // 2. Setup the UI immediately
-// === FEATURE: VISUAL POLISH (COMPLETE ICON DICTIONARY) ===
+
 function getMarketIcon(symbol) {
     if (symbol.includes('XAU')) return '🥇';
     if (symbol.includes('XAG')) return '🥈';
@@ -64,7 +63,7 @@ function getMarketIcon(symbol) {
     return '📈'; // Generic Fallback
 }
 
-// === UPDATED SETUP UI ===
+
 function setupUI() {
     if (!currentSymbol) {
         window.location.href = 'index.html';
@@ -80,7 +79,7 @@ function setupUI() {
     document.getElementById('detail-icon').innerText = getMarketIcon(currentSymbol);
 }
 
-// 3. Fetch Initial Price (Bypass the Weekend Empty Screen)
+
 async function fetchInitialPrice() {
     try {
         const response = await fetch(`${REST_URL}/quote?symbol=${currentSymbol}&token=${API_KEY}`);
@@ -132,8 +131,7 @@ function connectLiveFeed() {
             
             // Flash
             priceBox.style.color = flashColor;
-            setTimeout(() => { priceBox.style.color = "#f0f2f8"; }, 2000); // Using your 2000ms preference!
-            
+            setTimeout(() => { priceBox.style.color = "#f0f2f8"; }, 2000); 
             oldPrice = newPrice;
         }
     });
@@ -150,11 +148,8 @@ function getWeekendFallback(symbol) {
     };
     return fallbacks[symbol] || null;
 }
-// === FEATURE: TRADINGVIEW CHART INJECTION ===
-// === FEATURE: TRADINGVIEW CHART INJECTION (Cleaned for Forex) ===
-// === FEATURE: TRADINGVIEW CHART INJECTION (Final Fix) ===
-// === FINAL BULLETPROOF CHART FIX ===
-// === FIX: FORCING CLEAN SYMBOLS FOR FOREX ===
+
+//FIX: FORCING CLEAN SYMBOLS FOR FOREX
 function loadTradingViewChart() {
     const symbolMap = {
         'OANDA:XAUUSD': 'TVC:GOLD',
@@ -208,7 +203,7 @@ function loadTradingViewChart() {
 function waitForTradingView() {
     loadTradingViewChart();
 }
-// === LIGHT / DARK MODE TOGGLE ===
+//LIGHT / DARK MODE TOGGLE
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light');
   const btn = document.getElementById('theme-toggle');
