@@ -1,5 +1,3 @@
-/* TICKTALKER — DETAILS PAGE ENGINE (With Fallback Logic) */
-
 const API_KEY = 'd76lko9r01qtg3ne294gd76lko9r01qtg3ne2950';
 const REST_URL = 'https://finnhub.io/api/v1';
 
@@ -11,8 +9,6 @@ console.log("Raw symbol from URL:", rawSymbol);
 console.log("Clean symbol (no underscores):", currentSymbol);
 
 let oldPrice = 0; // Keep track of the price for directional flashing
-
-// 2. Setup the UI immediately
 
 function getMarketIcon(symbol) {
     if (symbol.includes('XAU')) return '🥇';
@@ -149,7 +145,7 @@ function getWeekendFallback(symbol) {
     return fallbacks[symbol] || null;
 }
 
-//FIX: FORCING CLEAN SYMBOLS FOR FOREX
+//FORCING CLEAN SYMBOLS FOR FOREX
 function loadTradingViewChart() {
     const symbolMap = {
         'OANDA:XAUUSD': 'TVC:GOLD',

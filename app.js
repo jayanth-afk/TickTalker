@@ -214,11 +214,9 @@ async function fetchInitialPrices() {
     }
 }
 
-//WEEKEND FALLBACK DICTIONARY (Updated for April 12, 2026)
-// Injects the actual weekend closing prices so the dashboard is accurate.
 function getWeekendFallback(symbol) {
     const fallbacks = {
-        // Metals (Updated to 2026 Surge Prices)
+        // Metals
         'OANDA:XAU_USD': 4748.18, 'OANDA:XAG_USD': 45.40, 'OANDA:XAU_EUR': 4047.55, 
         'OANDA:XAU_AUD': 7120.10, 'OANDA:XAU_JPY': 716000.00,
         
