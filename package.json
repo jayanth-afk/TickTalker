@@ -1,0 +1,23 @@
+{
+  "name": "tick-talker",
+  "version": "1.0.0",
+  "description": "- Live Price Fetching: Real-time data retrieval using the `fetch` API with `async/await`. - Dynamic Filtering: Search through assets instantly using JavaScript `Array.filter()`. - Market Sorting: Rank assets by price or volatility using `Array.sort()`. - Premium UI: A high-end \"Glassmorphic\" interface designed for maximum readability on Desktop.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayanth-afk/TickTalker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jayanth-afk/TickTalker/issues"
+  },
+  "homepage": "https://github.com/jayanth-afk/TickTalker#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
